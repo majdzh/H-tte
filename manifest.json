@@ -5,8 +5,7 @@
   "start_url": "index.html",
   "display": "standalone",
   "background_color": "#1e1e1e",
-  "theme_color": "#1e1e1e",
-  "orientation": "portrait",
+  "theme_color": "#ecf0f1",
   "icons": [
     {
       "src": "icon-192.png",
@@ -18,5 +17,17 @@
       "sizes": "512x512",
       "type": "image/png"
     }
-  ]
+  ],
+  "id": "huttekasse",
+  "screenshots": [
+    {
+      "src": "screenshot1.png",
+      "type": "image/png",
+      "sizes": "540x720"
+    }
+  ],
+  "launch_handler": {
+    "client_mode": "navigate-existing"
+  },
+  "display_override": ["standalone", "window-controls-overlay"]
 }
