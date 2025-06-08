@@ -1,8 +1,10 @@
 {
-  "name": "Hütte Kasse",
-  "short_name": "Hütte",
+  "id": "huttekasse",
+  "name": "H\u00fctte Kasse",
+  "short_name": "H\u00fctte",
   "description": "Offline-ready cash register system for parties and events.",
-  "start_url": "index.html",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#1e1e1e",
   "theme_color": "#1e1e1e",
@@ -19,7 +21,6 @@
       "type": "image/png"
     }
   ],
-  "id": "huttekasse",
   "screenshots": [
     {
       "src": "screenshot1.png",
@@ -30,5 +31,8 @@
   "launch_handler": {
     "client_mode": "navigate-existing"
   },
-  "display_override": ["standalone", "window-controls-overlay"]
+  "display_override": [
+    "standalone",
+    "window-controls-overlay"
+  ]
 }
