@@ -6,7 +6,6 @@
 <meta charset="utf-8"/>
 <title>Hütte Kasse Open Bar</title>
 <meta content="width=device-width, initial-scale=1" name="viewport"/>
-<link rel="manifest" href="manifest.json" />
 <style>
         body {
             font-family: sans-serif;
@@ -150,7 +149,7 @@ function finishOrder() {
 <div id="change" style="font-size: 20px; text-align: center; margin-top: 10px;">Rückgeld: €0.00</div>
 <div style="text-align: center; margin-top: 10px;">
 <button class="clear-btn" onclick="clearTotal()">Zurücksetzen</button>
-<button onclick="finishOrder()" style="background:#3498db; color:white; margin-left: 10px;">Finish Order 📸 + Reset</button>
+<button onclick="finishOrder()" style="background:#3498db; color:white; margin-left: 10px;">Finish Order 📸 + Screenshot</button>
 <button onclick="finishOrderWithoutScreenshot()" style="margin-left: 10px; background: #3498db; color: white;">Finish Order 🧾 (No Screenshot)</button>
 <button onclick="downloadSalesSummary()" style="margin-left: 10px; background: #2ecc71; color: white;">Download Summary 📄</button>
 <button onclick="resetSalesSummary()" style="margin-left: 10px; background: #e74c3c; color: white;">Reset Summary 🧹</button>
@@ -390,40 +389,45 @@ function finishOrderWithoutScreenshot() {
 }
 </script>
 <script>
+
 function downloadSalesSummary() {
+  const summaryContainer = document.createElement("div");
+  summaryContainer.style.padding = "20px";
+  summaryContainer.style.color = window.currentTheme === "cafe" ? "#4a3f35" : "#ecf0f1";
+  summaryContainer.style.background = window.currentTheme === "cafe" ? "#f5f0e6" : "#2c3e50";
+  summaryContainer.style.fontFamily = "sans-serif";
+  summaryContainer.innerHTML = "<h2>Sales Summary</h2>";
+
   const salesData = JSON.parse(localStorage.getItem("salesData") || "{}");
   const openBarData = JSON.parse(localStorage.getItem("openBarSalesData") || "{}");
 
-  let text = "# Sales Summary\n\n";
-
-  text += "## Paid Orders\n";
-  text += "| Item | Quantity Sold |\n";
-  text += "|------|----------------|\n";
-  if (Object.keys(salesData).length > 0) {
-    for (const [item, count] of Object.entries(salesData)) {
-      text += `| ${item} | ${count} |\n`;
+  function generateTable(title, data) {
+    let html = `<h3>${title}</h3><table border="1" cellspacing="0" cellpadding="8" style="border-collapse:collapse;width:100%;margin-bottom:20px;text-align:left;">`;
+    html += "<tr><th>Item</th><th>Quantity Sold</th></tr>";
+    if (Object.keys(data).length === 0) {
+      html += "<tr><td colspan='2'>-</td></tr>";
+    } else {
+      for (const [item, count] of Object.entries(data)) {
+        html += `<tr><td>${item}</td><td>${count}</td></tr>`;
+      }
     }
-  } else {
-    text += "| - | - |\n";
+    html += "</table>";
+    return html;
   }
 
-  text += "\n## Open Bar Orders (Free)\n";
-  text += "| Item | Quantity Sold |\n";
-  text += "|------|----------------|\n";
-  if (Object.keys(openBarData).length > 0) {
-    for (const [item, count] of Object.entries(openBarData)) {
-      text += `| ${item} | ${count} |\n`;
-    }
-  } else {
-    text += "| - | - |\n";
-  }
+  summaryContainer.innerHTML += generateTable("Paid Orders", salesData);
+  summaryContainer.innerHTML += generateTable("Open Bar Orders (Free)", openBarData);
+  document.body.appendChild(summaryContainer);
 
-  const blob = new Blob([text], { type: "text/markdown" });
-  const link = document.createElement("a");
-  link.download = "sales_summary_" + new Date().toISOString().slice(0, 19).replace(/[:T]/g, "_") + ".md";
-  link.href = URL.createObjectURL(blob);
-  link.click();
+  html2canvas(summaryContainer).then(canvas => {
+    const link = document.createElement("a");
+    link.download = "sales_summary_" + new Date().toISOString().slice(0, 19).replace(/[:T]/g, "_") + ".png";
+    link.href = canvas.toDataURL("image/png");
+    link.click();
+    document.body.removeChild(summaryContainer);
+  });
 }
+
 </script>
 <script>
 
@@ -508,5 +512,64 @@ function applyTheme(theme) {
 
 applyTheme('dark');
 </script>
+<div id="quantityModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background-color:rgba(0,0,0,0.7); z-index:9999; justify-content:center; align-items:center;">
+  <div style="background:#fff; padding:20px; border-radius:10px; text-align:center; color:black;">
+    <h3 id="modalItemName">Anzahl eingeben</h3>
+    <input id="modalQuantity" type="number" min="1" style="font-size:18px; width:80px; margin:10px auto;" />
+    <br/>
+    <button onclick="confirmQuantity()" style="padding:8px 16px; margin:5px;">OK</button>
+    <button onclick="closeModal()" style="padding:8px 16px; margin:5px;">Abbrechen</button>
+  </div>
 </body>
+<script>
+let modalTargetItem = null;
+
+function showModal(itemName, price) {
+  modalTargetItem = { name: itemName, price: price };
+  document.getElementById("modalItemName").innerText = `Wie viele "${itemName}"?`;
+  document.getElementById("modalQuantity").value = "";
+  document.getElementById("quantityModal").style.display = "flex";
+}
+
+function closeModal() {
+  modalTargetItem = null;
+  document.getElementById("quantityModal").style.display = "none";
+}
+
+function confirmQuantity() {
+  const qty = parseInt(document.getElementById("modalQuantity").value);
+  if (!isNaN(qty) && qty > 0 && modalTargetItem) {
+    const { name, price } = modalTargetItem;
+    total += price * qty;
+    itemPrices[name] = price;
+    order[name] = (order[name] || 0) + qty;
+    updateOrderList();
+    document.getElementById("total").innerText = "Total: €" + total.toFixed(2);
+    calculateChange();
+    closeModal();
+  }
+}
+
+
+
+document.querySelectorAll("button[data-price]").forEach(button => {
+  let pressTimer = null;
+  const name = button.innerText.split(" (€")[0].trim();
+
+  const start = (e) => {
+    e.preventDefault();
+    pressTimer = setTimeout(() => {
+      const price = parseFloat(button.getAttribute("data-price"));
+      showModal(name, price);
+    }, 500);
+  };
+
+  const cancel = () => clearTimeout(pressTimer);
+
+  button.addEventListener("pointerdown", start);
+  button.addEventListener("pointerup", cancel);
+  button.addEventListener("pointerleave", cancel);
+  button.addEventListener("pointercancel", cancel);
+});
+</script>
 </html>
