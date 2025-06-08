@@ -537,12 +537,16 @@ applyTheme('dark');
     <button onclick="closeModal()" style="padding:8px 16px; margin:5px;">Abbrechen</button>
   </div>
 
+
 <script>
   window.addEventListener("load", function () {
-    const loader = document.getElementById("loader");
-    if (loader) loader.style.display = "none";
+    setTimeout(() => {
+      const loader = document.getElementById("loader");
+      if (loader) loader.style.display = "none";
+    }, 1000); // Ensure splash stays visible for 1 second
   });
 </script>
+
 
 </body>
 <script>
